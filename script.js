@@ -2,8 +2,10 @@ const itemForm = document.getElementById("item-form");
 const itemInput = document.getElementById("item-input");
 const itemList = document.getElementById("item-list");
 const clearAll = document.getElementById("clear");
+let isEditMode = false;
 
 const itemFilter = document.getElementById("filter");
+const formBtn = itemForm.querySelector("button");
 
 document.addEventListener("DOMContentLoaded", (event) => {
   displayItemsInStorage();
@@ -21,18 +23,34 @@ function onAddItemSubmit(event) {
     return;
   }
 
+  // this is where it came from
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector(".edit-mode");
+    removeItemFromStorage(itemToEdit.textContent);
+    itemToEdit.classList.remove("edit-mode");
+    itemToEdit.remove();
+    isEditMode = false;
+  }
+
   // console.log(newItem);
 
-  addItemToDOM(newItem);
-  addItemToStorage(newItem);
+  const result = checkIfItemExists(newItem);
+  if (result) {
+    alert("item already exists");
+    itemInput.value = "";
+  } else {
+    addItemToDOM(newItem);
+    addItemToStorage(newItem);
 
-  checkUI();
+    checkUI();
 
-  itemInput.value = "";
+    itemInput.value = "";
+  }
 }
 
 function addItemToDOM(item) {
   const li = document.createElement("li");
+  li.classList.add("edit");
   li.appendChild(document.createTextNode(item));
 
   const button = createButton("remove-item btn-link text-red");
@@ -77,7 +95,30 @@ function createIcon(classes) {
 function onClickItem(event) {
   if (event.target.parentElement.classList.contains("remove-item")) {
     removeItem(event.target.parentElement.parentElement);
+  } else {
+    setItemToEdit(event.target);
   }
+}
+
+function checkIfItemExists(item) {
+  const itemsFromStorage = getItemFromStorage();
+  if (itemsFromStorage.includes(item)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function setItemToEdit(item) {
+  isEditMode = true;
+
+  itemList
+    .querySelectorAll("li")
+    .forEach((i) => i.classList.remove("edit-mode"));
+  item.classList.add("edit-mode");
+  formBtn.innerHTML = '<i class="fa-solid fa-pen"></i> Update Item';
+  formBtn.style.backgroundColor = "#ff6666";
+  itemInput.value = item.textContent;
 }
 
 function removeItem(item) {
@@ -138,6 +179,11 @@ function checkUI() {
     clearAll.style.display = "block";
     itemFilter.style.display = "block";
   }
+
+  formBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Item';
+  formBtn.style.backgroundColor = "#333";
+
+  isEditMode = false;
 }
 
 function getItemFromStorage() {
